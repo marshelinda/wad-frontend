@@ -3,6 +3,7 @@ import { Navbar } from "../components/Navbar";
 import { TaskCard } from "../components/TaskCard";
 import { TaskForm } from "../components/TaskForm";
 import { taskService } from "../services/task.service";
+import { useRealTimeTasks } from "../hooks/useRealTimeTasks"; // ← TAMBAH: Impor custom hook real-time
 import api from "../lib/axios";
 import { TokenStore } from "../lib/tokenStore";
 import axios from "axios";
@@ -14,6 +15,9 @@ export function TasksPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [filter, setFilter] = useState("ALL");
+
+  // ── REAL-TIME: Otomatis mendengarkan perubahan data task dari Socket.IO ──
+  useRealTimeTasks(setTasks); // ← TAMBAH
 
   const getAuthHeader = () => {
     const token = TokenStore.getAccessToken();
@@ -39,7 +43,7 @@ export function TasksPage() {
   }, [fetchTasks]);
 
   // ==========================================
-  // [CREATE] FUNGSI TAMBAH TASK (PATCHED TO BACKEND ROUTE)
+  // [CREATE] FUNGSI TAMBAH TASK
   // ==========================================
   const handleCreate = async (formData) => {
     const cleanPayload = {
@@ -51,16 +55,28 @@ export function TasksPage() {
 
     try {
       // Jalur utama: Memanfaatkan implementasi service bawaan lab
-      await taskService.create(cleanPayload);
-      fetchTasks();
+      const res = await taskService.create(cleanPayload);
+      const newTask = res?.data?.data || res?.data || res;
+
+      // Optimistic update: langsung pasang ke state, penyaringan duplikat diurus hook
+      if (newTask && newTask.id) {
+        setTasks((prev) => [newTask, ...prev]);
+      } else {
+        fetchTasks();
+      }
       setShowForm(false);
     } catch (err) {
       try {
         // Jalur Fallback: Tembak Axios manual langsung menuju endpoint /api/v1/tasks
         const urlAPI = `${api.defaults.baseURL}/tasks`.replace(/\/+/g, '/').replace('http:/', 'http://');
-        
-        await axios.post(urlAPI, cleanPayload, getAuthHeader());
-        fetchTasks();
+        const resFallback = await axios.post(urlAPI, cleanPayload, getAuthHeader());
+        const newTaskFallback = resFallback?.data?.data || resFallback?.data;
+
+        if (newTaskFallback && newTaskFallback.id) {
+          setTasks((prev) => [newTaskFallback, ...prev]);
+        } else {
+          fetchTasks();
+        }
         setShowForm(false);
       } catch (finalErr) {
         const errMsg = finalErr.response?.data?.error?.message || finalErr.response?.data?.message || "Data ditolak server.";
@@ -75,7 +91,7 @@ export function TasksPage() {
   };
 
   // ==========================================
-  // [UPDATE] FUNGSI EDIT TASK (MATCHED TO PATCH METHOD)
+  // [UPDATE] FUNGSI EDIT TASK
   // ==========================================
   const handleUpdate = async (formData) => {
     const cleanPayload = {
@@ -88,16 +104,15 @@ export function TasksPage() {
     try {
       // Jalur utama: Memanfaatkan update bawaan service lab
       await taskService.update(editTarget.id, cleanPayload);
-      fetchTasks();
+      // Catatan: Array state lokal akan otomatis ter-update via onTaskUpdated di hook real-time
       setShowForm(false);
       setEditTarget(null);
     } catch (err) {
       try {
-        // Jalur Fallback: Gunakan PATCH manual ke /api/v1/tasks/:id sesuai struktur file kontroler backend kamu
+        // Jalur Fallback: Gunakan PATCH manual ke /api/v1/tasks/:id
         const urlPatch = `${api.defaults.baseURL}/tasks/${editTarget.id}`.replace(/\/+/g, '/').replace('http:/', 'http://');
-        
         await axios.patch(urlPatch, cleanPayload, getAuthHeader());
-        fetchTasks();
+        
         setShowForm(false);
         setEditTarget(null);
       } catch (finalErr) {
@@ -112,8 +127,11 @@ export function TasksPage() {
   // ==========================================
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin ingin menghapus task ini?")) return;
+    
     try {
       await taskService.remove(id);
+      // Catatan: Komponen akan terhapus via onTaskDeleted di hook real-time, 
+      // namun kita biarkan penyaringan lokal ini berjalan sebagai cadangan instan.
       setTasks((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
       try {
