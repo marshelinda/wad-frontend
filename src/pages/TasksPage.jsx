@@ -3,6 +3,8 @@ import { Navbar } from "../components/Navbar";
 import { TaskCard } from "../components/TaskCard";
 import { TaskForm } from "../components/TaskForm";
 import { taskService } from "../services/task.service";
+import api from "../lib/axios";
+import { TokenStore } from "../lib/tokenStore";
 import axios from "axios";
 
 export function TasksPage() {
@@ -14,15 +16,15 @@ export function TasksPage() {
   const [filter, setFilter] = useState("ALL");
 
   const getAuthHeader = () => {
-    const token = localStorage.getItem("accessToken") || localStorage.getItem("token") || "";
-    return { headers: { Authorization: `Bearer ${token}` } };
+    const token = TokenStore.getAccessToken();
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
   };
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = filter !== "ALL" ? { status: filter } : {};
+      const params = filter !== "ALL" ? { status: filter.toLowerCase() } : {};
       const res = await taskService.getAll(params);
       setTasks(res?.data?.data || res?.data || []);
     } catch (err) {
@@ -36,38 +38,33 @@ export function TasksPage() {
     fetchTasks();
   }, [fetchTasks]);
 
-  // CREATE TASK DENGAN AUTO-STRIPPER (STRATEGI ANTI GAGAL)
+  // ==========================================
+  // [CREATE] FUNGSI TAMBAH TASK (PATCHED TO BACKEND ROUTE)
+  // ==========================================
   const handleCreate = async (formData) => {
-    // Siapkan data bersih yang murni tanpa field tanggal yang membingungkan validator backend
     const cleanPayload = {
       title: formData.title,
       description: formData.description || "",
-      status: formData.status,
-      priority: formData.priority
+      status: (formData.status || "todo").toLowerCase(),
+      priority: (formData.priority || "medium").toLowerCase(),
     };
 
-    // Jika user menginputkan tanggal, masukkan tipenya sebagai objek Date asli (bukan ISO string)
-    if (formData.dueDate && formData.dueDate !== "") {
-      cleanPayload.dueDate = new Date(formData.dueDate);
-      cleanPayload.due_date = new Date(formData.dueDate);
-    }
-
     try {
-      // Coba kirim data lengkap (dengan tanggal objek Date)
+      // Jalur utama: Memanfaatkan implementasi service bawaan lab
       await taskService.create(cleanPayload);
       fetchTasks();
       setShowForm(false);
     } catch (err) {
       try {
-        // JIKA GAGAL: Langsung hapus paksa field tanggal karena biasanya database melarang null/string kosong
-        delete cleanPayload.dueDate;
-        delete cleanPayload.due_date;
+        // Jalur Fallback: Tembak Axios manual langsung menuju endpoint /api/v1/tasks
+        const urlAPI = `${api.defaults.baseURL}/tasks`.replace(/\/+/g, '/').replace('http:/', 'http://');
         
-        await taskService.create(cleanPayload);
+        await axios.post(urlAPI, cleanPayload, getAuthHeader());
         fetchTasks();
         setShowForm(false);
-      } catch (retryErr) {
-        alert("Gagal membuat task. Silakan cek koneksi atau struktur backend utama.");
+      } catch (finalErr) {
+        const errMsg = finalErr.response?.data?.error?.message || finalErr.response?.data?.message || "Data ditolak server.";
+        alert(`Gagal Tambah Task!\nRespon Backend: ${errMsg}`);
       }
     }
   };
@@ -77,56 +74,55 @@ export function TasksPage() {
     setShowForm(true);
   };
 
-  // UPDATE TASK DENGAN AUTO-STRIPPER & AUTOPATCH FALLBACK
+  // ==========================================
+  // [UPDATE] FUNGSI EDIT TASK (MATCHED TO PATCH METHOD)
+  // ==========================================
   const handleUpdate = async (formData) => {
     const cleanPayload = {
       title: formData.title,
       description: formData.description || "",
-      status: formData.status,
-      priority: formData.priority
+      status: formData.status?.toLowerCase(),
+      priority: formData.priority?.toLowerCase(),
     };
 
-    if (formData.dueDate && formData.dueDate !== "") {
-      cleanPayload.dueDate = new Date(formData.dueDate);
-      cleanPayload.due_date = new Date(formData.dueDate);
-    }
-
     try {
-      // Jalur 1: Menggunakan PUT standard bawaan service lab
+      // Jalur utama: Memanfaatkan update bawaan service lab
       await taskService.update(editTarget.id, cleanPayload);
       fetchTasks();
       setShowForm(false);
       setEditTarget(null);
     } catch (err) {
       try {
-        // Jalur 2: Menggunakan PATCH via Axios langsung (karena route PUT /id sering tidak ada)
-        await axios.patch(`/api/v1/tasks/${editTarget.id}`, cleanPayload, getAuthHeader());
+        // Jalur Fallback: Gunakan PATCH manual ke /api/v1/tasks/:id sesuai struktur file kontroler backend kamu
+        const urlPatch = `${api.defaults.baseURL}/tasks/${editTarget.id}`.replace(/\/+/g, '/').replace('http:/', 'http://');
+        
+        await axios.patch(urlPatch, cleanPayload, getAuthHeader());
         fetchTasks();
         setShowForm(false);
         setEditTarget(null);
-      } catch (fallbackErr) {
-        try {
-          // Jalur 3: Hapus data tanggal dan coba PATCH ulang (Bypass validasi tanggal mampet)
-          delete cleanPayload.dueDate;
-          delete cleanPayload.due_date;
-          await axios.patch(`/api/v1/tasks/${editTarget.id}`, cleanPayload, getAuthHeader());
-          fetchTasks();
-          setShowForm(false);
-          setEditTarget(null);
-        } catch (finalErr) {
-          alert("Gagal memperbarui task. Endpoint atau skema ditolak oleh server.");
-        }
+      } catch (finalErr) {
+        const errMsg = finalErr.response?.data?.error?.message || finalErr.response?.data?.message || "Gagal mengupdate data.";
+        alert(`Gagal Update Task!\nRespon Backend: ${errMsg}`);
       }
     }
   };
 
+  // ==========================================
+  // [DELETE] FUNGSI HAPUS TASK
+  // ==========================================
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin ingin menghapus task ini?")) return;
     try {
       await taskService.remove(id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
-      alert(err.response?.data?.error?.message || "Gagal menghapus task");
+      try {
+        const urlDelete = `${api.defaults.baseURL}/tasks/${id}`.replace(/\/+/g, '/').replace('http:/', 'http://');
+        await axios.delete(urlDelete, getAuthHeader());
+        setTasks((prev) => prev.filter((t) => t.id !== id));
+      } catch (errDirect) {
+        alert("Gagal menghapus task.");
+      }
     }
   };
 

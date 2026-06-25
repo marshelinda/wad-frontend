@@ -12,8 +12,10 @@ export function TaskCard({ task, onEdit, onDelete }) {
     HIGH: { label: "Tinggi", color: "#dc2626" },
   };
 
-  const s = statusConfig[task.status] || statusConfig.TODO;
-  const p = priorityConfig[task.priority] || priorityConfig.MEDIUM;
+  const normalizedStatus = String(task.status || "").toUpperCase();
+  const normalizedPriority = String(task.priority || "").toUpperCase();
+  const s = statusConfig[normalizedStatus] || statusConfig.TODO;
+  const p = priorityConfig[normalizedPriority] || priorityConfig.MEDIUM;
 
   return (
     <div className="task-card">

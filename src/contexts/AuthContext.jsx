@@ -59,10 +59,10 @@ export function AuthProvider({ children }) {
     
     const responseData = response.data;
 
-    // 2. Ekstraksi berlapis (Mencakup segala jenis format bungkus JSON dari backend)
+    // 2. Ekstraksi berlapis (Mencakup berbagai format respons backend)
     const accessToken = responseData?.data?.accessToken || responseData?.accessToken || responseData?.data?.token || responseData?.token;
     const refreshToken = responseData?.data?.refreshToken || responseData?.refreshToken;
-    const userData = responseData?.data?.user || responseData?.user || responseData?.data?.userData || responseData?.userData;
+    const userData = responseData?.data?.user || responseData?.data || responseData?.user || responseData?.data?.userData || responseData?.userData;
 
     // 3. Validasi kebenaran token
     if (!accessToken) {

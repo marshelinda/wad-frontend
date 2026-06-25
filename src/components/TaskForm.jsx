@@ -13,8 +13,8 @@ export function TaskForm({ onSubmit, onCancel, initialData = null }) {
     defaultValues: {
       title: "",
       description: "",
-      status: "TODO",
-      priority: "MEDIUM",
+      status: "todo",
+      priority: "medium",
       dueDate: "",
     },
   });
@@ -22,14 +22,20 @@ export function TaskForm({ onSubmit, onCancel, initialData = null }) {
   useEffect(() => {
     if (initialData) {
       let mappedStatus = initialData.status;
-      if (mappedStatus === "Belum Dimulai") mappedStatus = "TODO";
-      if (mappedStatus === "Sedang Dikerjakan") mappedStatus = "IN_PROGRESS";
-      if (mappedStatus === "Selesai") mappedStatus = "DONE";
+      if (typeof mappedStatus === "string") {
+        mappedStatus = mappedStatus.toLowerCase();
+        if (mappedStatus === "belum dimulai") mappedStatus = "todo";
+        if (mappedStatus === "sedang dikerjakan") mappedStatus = "in_progress";
+        if (mappedStatus === "selesai") mappedStatus = "done";
+      }
 
       let mappedPriority = initialData.priority;
-      if (mappedPriority === "Rendah") mappedPriority = "LOW";
-      if (mappedPriority === "Sedang") mappedPriority = "MEDIUM";
-      if (mappedPriority === "Tinggi") mappedPriority = "HIGH";
+      if (typeof mappedPriority === "string") {
+        mappedPriority = mappedPriority.toLowerCase();
+        if (mappedPriority === "rendah") mappedPriority = "low";
+        if (mappedPriority === "sedang") mappedPriority = "medium";
+        if (mappedPriority === "tinggi") mappedPriority = "high";
+      }
 
       const formattedDate = initialData.dueDate 
         ? new Date(initialData.dueDate).toISOString().split("T")[0] 
@@ -38,32 +44,26 @@ export function TaskForm({ onSubmit, onCancel, initialData = null }) {
       reset({
         title: initialData.title || "",
         description: initialData.description || "",
-        status: mappedStatus || "TODO",
-        priority: mappedPriority || "MEDIUM",
+        status: mappedStatus || "todo",
+        priority: mappedPriority || "medium",
         dueDate: formattedDate,
       });
     }
   }, [initialData, reset]);
 
   const handleFormSubmit = (data) => {
-    // Buat payload super aman dengan semua variasi field tanggal
     const payload = {
       title: data.title,
       description: data.description || "",
-      status: data.status,     
-      priority: data.priority, 
+      status: data.status,
+      priority: data.priority,
     };
 
     if (data.dueDate && data.dueDate.trim() !== "") {
       const dateObj = new Date(data.dueDate);
       payload.dueDate = dateObj.toISOString();
-      payload.due_date = dateObj.toISOString();
-    } else {
-      // Jangan set null dulu di sini, biarkan kosong atau nanti dihandle oleh page jika error
-      payload.dueDate = "";
-      payload.due_date = "";
     }
-    
+
     onSubmit(payload);
   };
 
@@ -88,18 +88,18 @@ export function TaskForm({ onSubmit, onCancel, initialData = null }) {
             <div className="form-group">
               <label>Status</label>
               <select {...register("status")}>
-                <option value="TODO">Belum Dimulai</option>
-                <option value="IN_PROGRESS">Sedang Dikerjakan</option>
-                <option value="DONE">Selesai</option>
+                <option value="todo">Belum Dimulai</option>
+                <option value="in_progress">Sedang Dikerjakan</option>
+                <option value="done">Selesai</option>
               </select>
             </div>
 
             <div className="form-group">
               <label>Prioritas</label>
               <select {...register("priority")}>
-                <option value="LOW">Rendah</option>
-                <option value="MEDIUM">Sedang</option>
-                <option value="HIGH">Tinggi</option>
+                <option value="low">Rendah</option>
+                <option value="medium">Sedang</option>
+                <option value="high">Tinggi</option>
               </select>
             </div>
           </div>
