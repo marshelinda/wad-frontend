@@ -9,7 +9,6 @@ const api = axios.create({
 });
 
 // ── REQUEST INTERCEPTOR ──────────────────────────────────
-// Sisipkan access token ke header setiap request
 api.interceptors.request.use(
   (config) => {
     const token = TokenStore.getAccessToken();
@@ -22,7 +21,6 @@ api.interceptors.request.use(
 );
 
 // ── RESPONSE INTERCEPTOR ─────────────────────────────────
-// Tangani 401 dengan refresh token otomatis
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -64,7 +62,18 @@ api.interceptors.response.use(
         const { data } = await axios.post("/auth/refresh", { refreshToken });
         const newToken = data.data.accessToken;
 
+        // 1. Simpan token baru di local storage/cookie
         TokenStore.setAccessToken(newToken);
+
+        // ── TAMBAHAN DARI HANDBOOK ──────────────────────────────
+        // 2. Kirim sinyal global berisi token baru ke SocketContext
+        window.dispatchEvent(
+          new CustomEvent("token:refreshed", {
+            detail: { token: newToken },
+          })
+        );
+        // ────────────────────────────────────────────────────────
+
         processQueue(null, newToken);
 
         orig.headers.Authorization = `Bearer ${newToken}`;

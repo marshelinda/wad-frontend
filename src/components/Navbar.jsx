@@ -1,8 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useSocket } from "../contexts/SocketContext"; // ← TAMBAH: Mengimpor state socket global
 
 export function Navbar() {
   const { user, logout } = useAuth();
+  const { isConnected, onlineCount } = useSocket(); // ← TAMBAH: Mengambil status koneksi dan jumlah user online
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -17,6 +19,25 @@ export function Navbar() {
       </div>
       
       <div className="navbar-menu">
+        {/* ── INDIKATOR REAL-TIME (BARU) ────────────────────── */}
+        <div className="rt-indicator" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginRight: "1rem" }}>
+          <span
+            className="rt-dot"
+            style={{ 
+              display: "inline-block",
+              width: "10px",
+              height: "10px",
+              borderRadius: "50%",
+              background: isConnected ? "#4ade80" : "#f87171" 
+            }}
+            title={isConnected ? "Real-time aktif" : "Tidak terhubung"}
+          />
+          <span className="rt-label" style={{ fontSize: "0.85rem", color: "#4b5563" }}>
+            {isConnected ? `${onlineCount} online` : "Offline"}
+          </span>
+        </div>
+
+        {/* ── MENU NAVIGASI UTAMA ────────────────────────────── */}
         <Link to="/tasks">Tasks</Link>
         <Link to="/profile">Profil</Link>
         <span className="navbar-user">Halo, {user?.name}</span>
