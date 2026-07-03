@@ -40,7 +40,7 @@ export function SocketProvider({ children }) {
       return;
     }
 
-    const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
+    const serverUrl = import.meta.env.VITE_SERVER_URL || "http://103.93.135.78:3000";
 
     const socket = io(serverUrl, {
       auth: { token: TokenStore.getAccessToken() },
