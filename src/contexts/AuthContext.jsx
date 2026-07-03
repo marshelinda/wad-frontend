@@ -3,7 +3,7 @@ import axios from "axios";
 import { TokenStore } from "../lib/tokenStore";
 
 // Mengatur base URL ke API Express Backend secara akurat
-axios.defaults.baseURL = "http://localhost:3000"; 
+axios.defaults.baseURL = "http://103.93.135.78:3000"; 
 // Memastikan cookies/headers kredensial dikirim dengan benar jika backend membutuhkannya
 axios.defaults.withCredentials = false; 
 
