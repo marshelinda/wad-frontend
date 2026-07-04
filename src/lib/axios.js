@@ -1,9 +1,11 @@
 import axios from "axios";
 import { TokenStore } from "./tokenStore";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://103.93.135.78:3000/api/v1";
+
 // Instance utama untuk semua request API
 const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
 });
