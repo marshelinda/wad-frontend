@@ -2,8 +2,10 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import axios from "axios";
 import { TokenStore } from "../lib/tokenStore";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://103.93.135.78:3000/api/v1";
+
 // Mengatur base URL ke API Express Backend secara akurat
-axios.defaults.baseURL = "http://103.93.135.78:3000"; 
+axios.defaults.baseURL = API_BASE_URL;
 // Memastikan cookies/headers kredensial dikirim dengan benar jika backend membutuhkannya
 axios.defaults.withCredentials = false; 
 

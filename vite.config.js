@@ -8,12 +8,12 @@ export default defineConfig({
     proxy: {
       // Semua request ke /api/... diteruskan ke backend
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://103.93.135.78:3000",
         changeOrigin: true,
       },
       // Semua request ke /auth/... diteruskan ke backend
       "/auth": {
-        target: "http://localhost:3000",
+        target: "http://103.93.135.78:3000",
         changeOrigin: true,
       },
     },
