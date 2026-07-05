@@ -2,12 +2,10 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import axios from "axios";
 import { TokenStore } from "../lib/tokenStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://103.93.135.78:3000";
-
 // Mengatur base URL ke API Express Backend secara akurat
-axios.defaults.baseURL = API_BASE_URL;
+axios.defaults.baseURL = "http://103.93.135.78:3000";
 // Memastikan cookies/headers kredensial dikirim dengan benar jika backend membutuhkannya
-axios.defaults.withCredentials = false; 
+axios.defaults.withCredentials = false;
 
 const AuthContext = createContext(null);
 
@@ -26,15 +24,15 @@ export function AuthProvider({ children }) {
       try {
         const rfToken = TokenStore.getRefreshToken();
         const { data } = await axios.post("/auth/refresh", { refreshToken: rfToken });
-        
+
         const token = data?.data?.accessToken || data?.accessToken || data?.data?.token || data?.token;
-        
+
         if (token) {
           TokenStore.setAccessToken(token);
           const { data: me } = await axios.get("/auth/me", {
             headers: { Authorization: `Bearer ${token}` },
           });
-          
+
           const finalUser = me?.data || me?.user || me;
           setUser(finalUser);
         } else {
@@ -54,11 +52,11 @@ export function AuthProvider({ children }) {
   // ─── FUNGSI LOGIN UTAMA (FINAL & ULTRA-KEBAL) ───────────────────
   const login = useCallback(async (email, password) => {
     // 1. Kirim data login ke backend dengan header eksplisit untuk menghindari preflight murni yang ketat
-    const response = await axios.post("/auth/login", 
+    const response = await axios.post("/auth/login",
       { email, password },
       { headers: { "Content-Type": "application/json" } }
     );
-    
+
     const responseData = response.data;
 
     // 2. Ekstraksi berlapis (Mencakup berbagai format respons backend)
@@ -77,9 +75,9 @@ export function AuthProvider({ children }) {
     if (refreshToken) {
       TokenStore.setRefreshToken(refreshToken);
     }
-    
+
     // Fallback jika objek user kosong dari backend agar state tidak bernilai null
-    setUser(userData || { email, role: "USER" }); 
+    setUser(userData || { email, role: "USER" });
   }, []);
 
   const register = useCallback(async (name, email, password) => {
@@ -99,7 +97,7 @@ export function AuthProvider({ children }) {
     } catch {
       /* abaikan error logout */
     }
-    
+
     TokenStore.clear();
     setUser(null);
   }, []);
