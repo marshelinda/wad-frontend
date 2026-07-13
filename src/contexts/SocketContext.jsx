@@ -46,7 +46,6 @@ export function SocketProvider({ children }) {
     // Gunakan asal dinamis "/" agar mengarah tepat ke hostname web (Nginx/Vite proxy)
     const socket = io("/", {
       auth: { token: TokenStore.getAccessToken() },
-      transports: ["websocket", "polling"],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
