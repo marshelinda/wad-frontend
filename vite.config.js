@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     // 1. Izinkan domain HTTPS kamu agar tidak terkena "Blocked request"
+    host: true,
     allowedHosts: [
       "task-manager.marshelinda.my.id"
     ],
