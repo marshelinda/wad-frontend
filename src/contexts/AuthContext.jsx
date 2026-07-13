@@ -2,8 +2,14 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import axios from "axios";
 import { TokenStore } from "../lib/tokenStore";
 
-// Mengatur base URL ke API Express Backend secara akurat
-axios.defaults.baseURL = "http://localhost:3000";
+// ─── OTOMATISASI BASE URL (Bisa Jalan di Lokal & VPS Sekaligus) ───
+// Jika diakses via IP VPS (103.93.135.78), dia akan menembak ke backend port 3000 di VPS.
+// Jika diakses via localhost (laptop), dia otomatis kembali menembak ke localhost:3000.
+const currentHost = window.location.hostname;
+axios.defaults.baseURL = currentHost === "localhost" || currentHost === "127.0.0.1"
+  ? "http://localhost:3000"
+  : `http://${currentHost}:3000`;
+
 // Memastikan cookies/headers kredensial dikirim dengan benar jika backend membutuhkannya
 axios.defaults.withCredentials = false;
 
@@ -46,7 +52,8 @@ export function AuthProvider({ children }) {
       }
     };
 
-    restore();
+    const restore_session = restore;
+    restore_session();
   }, []);
 
   // ─── FUNGSI LOGIN UTAMA (FINAL & ULTRA-KEBAL) ───────────────────
