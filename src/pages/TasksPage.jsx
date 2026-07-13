@@ -67,9 +67,8 @@ export function TasksPage() {
       setShowForm(false);
     } catch (err) {
       try {
-        // Jalur Fallback: Tembak Axios manual langsung menuju endpoint /api/v1/tasks
-        const urlAPI = `${api.defaults.baseURL}/tasks`.replace(/\/+/g, '/').replace('http:/', 'http://');
-        const resFallback = await axios.post(urlAPI, cleanPayload, getAuthHeader());
+        // Jalur Fallback: Tembak manual ke endpoint /api/v1/tasks
+        const resFallback = await api.post("/api/v1/tasks", cleanPayload, getAuthHeader());
         const newTaskFallback = resFallback?.data?.data || resFallback?.data;
 
         if (newTaskFallback && newTaskFallback.id) {
@@ -103,15 +102,17 @@ export function TasksPage() {
 
     try {
       // Jalur utama: Memanfaatkan update bawaan service lab
-      await taskService.update(editTarget.id, cleanPayload);
-      // Catatan: Array state lokal akan otomatis ter-update via onTaskUpdated di hook real-time
+      const res = await taskService.update(editTarget.id, cleanPayload);
+      
+      // FIX: Array state lokal diupdate agar tidak bergantung pada socket jika tidak terkirim
+      setTasks(prev => prev.map(t => t.id === editTarget.id ? res : t));
+      
       setShowForm(false);
       setEditTarget(null);
     } catch (err) {
       try {
         // Jalur Fallback: Gunakan PATCH manual ke /api/v1/tasks/:id
-        const urlPatch = `${api.defaults.baseURL}/tasks/${editTarget.id}`.replace(/\/+/g, '/').replace('http:/', 'http://');
-        await axios.patch(urlPatch, cleanPayload, getAuthHeader());
+        await api.patch(`/api/v1/tasks/${editTarget.id}`, cleanPayload, getAuthHeader());
         
         setShowForm(false);
         setEditTarget(null);
@@ -135,8 +136,7 @@ export function TasksPage() {
       setTasks((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
       try {
-        const urlDelete = `${api.defaults.baseURL}/tasks/${id}`.replace(/\/+/g, '/').replace('http:/', 'http://');
-        await axios.delete(urlDelete, getAuthHeader());
+        await api.delete(`/api/v1/tasks/${id}`, getAuthHeader());
         setTasks((prev) => prev.filter((t) => t.id !== id));
       } catch (errDirect) {
         alert("Gagal menghapus task.");
