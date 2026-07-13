@@ -5,6 +5,11 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
+    // 1. Izinkan domain HTTPS kamu agar tidak terkena "Blocked request"
+    allowedHosts: [
+      "task-manager.marshelinda.my.id"
+    ],
+    // 2. Pertahankan proxy andalanmu
     proxy: {
       // Semua request ke /api/... diteruskan ke backend
       "/api": {
