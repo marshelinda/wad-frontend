@@ -1,17 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import api from '../lib/axios';
 import { TokenStore } from "../lib/tokenStore";
-
-// ─── OTOMATISASI BASE URL (Bisa Jalan di Lokal & VPS Sekaligus) ───
-// Jika diakses via IP VPS (103.93.135.78), dia akan menembak ke backend port 3000 di VPS.
-// Jika diakses via localhost (laptop), dia otomatis kembali menembak ke localhost:3000.
-const currentHost = window.location.hostname;
-axios.defaults.baseURL = currentHost === "localhost" || currentHost === "127.0.0.1"
-  ? "http://localhost:3000"
-  : `http://${currentHost}:3000`;
-
-// Memastikan cookies/headers kredensial dikirim dengan benar jika backend membutuhkannya
-axios.defaults.withCredentials = false;
 
 const AuthContext = createContext(null);
 
@@ -29,13 +18,13 @@ export function AuthProvider({ children }) {
 
       try {
         const rfToken = TokenStore.getRefreshToken();
-        const { data } = await axios.post("/auth/refresh", { refreshToken: rfToken });
+        const { data } = await api.post("/auth/refresh", { refreshToken: rfToken });
 
         const token = data?.data?.accessToken || data?.accessToken || data?.data?.token || data?.token;
 
         if (token) {
           TokenStore.setAccessToken(token);
-          const { data: me } = await axios.get("/auth/me", {
+          const { data: me } = await api.get("/auth/me", {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -58,8 +47,8 @@ export function AuthProvider({ children }) {
 
   // ─── FUNGSI LOGIN UTAMA (FINAL & ULTRA-KEBAL) ───────────────────
   const login = useCallback(async (email, password) => {
-    // 1. Kirim data login ke backend dengan header eksplisit untuk menghindari preflight murni yang ketat
-    const response = await axios.post("/auth/login",
+    // 1. Kirim data login ke backend dengan api instance universal
+    const response = await api.post("/auth/login",
       { email, password },
       { headers: { "Content-Type": "application/json" } }
     );
@@ -88,13 +77,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (name, email, password) => {
-    await axios.post("/auth/register", { name, email, password });
+    await api.post("/auth/register", { name, email, password });
   }, []);
 
   const logout = useCallback(async () => {
     try {
       const rfToken = TokenStore.getRefreshToken();
-      await axios.post(
+      await api.post(
         "/auth/logout",
         { refreshToken: rfToken },
         {

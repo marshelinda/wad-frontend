@@ -43,9 +43,8 @@ export function SocketProvider({ children }) {
       return;
     }
 
-    const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
-
-    const socket = io(serverUrl, {
+    // Gunakan asal dinamis kosong "" agar menggunakan hostname web yang sama (Nginx/Vite proxy)
+    const socket = io("", {
       auth: { token: TokenStore.getAccessToken() },
       transports: ["websocket", "polling"],
       reconnectionAttempts: 5,

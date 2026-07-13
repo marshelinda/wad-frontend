@@ -29,9 +29,8 @@ export default function RemindersPage() {
   const fetchPageData = async () => {
     try {
       const [reminderRes, taskRes] = await Promise.all([
-        axiosInstance.get('/reminders/upcoming').catch(() => ({ data: [] })),
-        // Menggunakan '/tasks' karena axiosInstance otomatis menambahkan prefix /api/v1
-        axiosInstance.get('/tasks').catch(() => ({ data: [] }))
+        axiosInstance.get('/api/v1/reminders/upcoming').catch(() => ({ data: [] })),
+        axiosInstance.get('/api/v1/tasks').catch(() => ({ data: [] }))
       ]);
 
       setReminders(parseResponseData(reminderRes.data));
@@ -54,7 +53,7 @@ const handleSubmit = async (e) => {
     if (!selectedTaskId || !waktu) return alert('Silakan isi tugas dan waktu terlebih dahulu');
 
     try {
-      await axiosInstance.post('/reminders', {
+      await axiosInstance.post('/api/v1/reminders', {
         taskId: parseInt(selectedTaskId, 10),
         remindAt: new Date(waktu).toISOString()
       });
