@@ -43,8 +43,8 @@ export function SocketProvider({ children }) {
       return;
     }
 
-    // Gunakan asal dinamis kosong "" agar menggunakan hostname web yang sama (Nginx/Vite proxy)
-    const socket = io("", {
+    // Gunakan asal dinamis "/" agar mengarah tepat ke hostname web (Nginx/Vite proxy)
+    const socket = io("/", {
       auth: { token: TokenStore.getAccessToken() },
       transports: ["websocket", "polling"],
       reconnectionAttempts: 5,
