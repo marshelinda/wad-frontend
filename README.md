@@ -175,7 +175,7 @@ Aplikasi ini dirancang untuk di-deploy menggunakan arsitektur full-stack serta d
 
 ### Tautan Akses Produksi
 Aplikasi web yang berjalan di lingkungan server dapat diakses langsung oleh publik via peramban melalui tautan berikut:
-*  Akses Domain: http://task-manager.marshelinda.my.id
+*  Akses Domain: https://task-manager.marshelinda.my.id
 *  Akses IP Server: http://103.93.135.78:3001
 
 ```mermaid
