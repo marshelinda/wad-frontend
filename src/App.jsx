@@ -8,12 +8,14 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { TasksPage } from "./pages/TasksPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import RemindersPage from "./pages/RemindersPage";
 
 export default function App() {
   return (
     <AuthProvider>
-      <SocketProvider>
-        <NotifProvider>
+      {/* 🎯 SEKARANG NOTIFPROVIDER DI LUAR AGAR BISA DIAKSES OLEH SOCKETPROVIDER */}
+      <NotifProvider>
+        <SocketProvider>
           <BrowserRouter>
             <Routes>
               {/* Halaman Publik */}
@@ -25,6 +27,7 @@ export default function App() {
                 <Route path="/" element={<Navigate to="/tasks" replace />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/reminders" element={<RemindersPage />} />
               </Route>
 
               {/* Fallback Rute Tidak Dikenal */}
@@ -34,8 +37,8 @@ export default function App() {
             {/* Toast selalu tampil melayang di semua halaman */}
             <ToastContainer />
           </BrowserRouter>
-        </NotifProvider>
-      </SocketProvider>
+        </SocketProvider>
+      </NotifProvider>
     </AuthProvider>
   );
 }

@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { useSocket } from "../contexts/SocketContext"; // ← TAMBAH: Mengimpor state socket global
+import { useSocket } from "../contexts/SocketContext";
 
 export function Navbar() {
   const { user, logout } = useAuth();
-  const { isConnected, onlineCount } = useSocket(); // ← TAMBAH: Mengambil status koneksi dan jumlah user online
+  const { isConnected, onlineCount } = useSocket();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -19,7 +19,7 @@ export function Navbar() {
       </div>
       
       <div className="navbar-menu">
-        {/* ── INDIKATOR REAL-TIME (BARU) ────────────────────── */}
+        {/* ── INDIKATOR REAL-TIME ────────────────────────────── */}
         <div className="rt-indicator" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginRight: "1rem" }}>
           <span
             className="rt-dot"
@@ -39,6 +39,7 @@ export function Navbar() {
 
         {/* ── MENU NAVIGASI UTAMA ────────────────────────────── */}
         <Link to="/tasks">Tasks</Link>
+        <Link to="/reminders">Reminders</Link> {/* Tautan menu baru */}
         <Link to="/profile">Profil</Link>
         <span className="navbar-user">Halo, {user?.name}</span>
         <button onClick={handleLogout} className="btn-logout">
