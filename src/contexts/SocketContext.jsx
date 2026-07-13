@@ -2,23 +2,27 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { TokenStore } from "../lib/tokenStore";
+// 🔥 Ambil useNotif dari context asli proyekmu
+import { useNotif } from "./NotifContext"; 
 
 const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const { user } = useAuth();
+  
+  // 🔥 SEKARANG AMAN: Mengambil fungsi addToast langsung dari NotifContext
+  const notifContext = useNotif();
+  const addToast = notifContext ? notifContext.addToast : null;
+
   const socketRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
 
-  // ── TAMBAHAN DARI HANDBOOK: LISTENER REFRESH TOKEN ───────
+  // ── LISTENER REFRESH TOKEN ───────────────────────────────
   useEffect(() => {
     const handleTokenRefresh = (e) => {
       if (socketRef.current) {
-        console.log("[Socket] Token diperbarui otomatis, mengoneksikan ulang...");
-        // Update data token di handshake object instansi socket saat ini
         socketRef.current.auth = { token: e.detail.token };
-        // Putuskan lalu hubungkan kembali secara instan agar server memverifikasi token baru
         socketRef.current.disconnect().connect();
       }
     };
@@ -28,7 +32,6 @@ export function SocketProvider({ children }) {
       window.removeEventListener("token:refreshed", handleTokenRefresh);
     };
   }, []);
-  // ────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!user) {
@@ -40,7 +43,7 @@ export function SocketProvider({ children }) {
       return;
     }
 
-    const serverUrl = import.meta.env.VITE_SERVER_URL || "http://103.93.135.78:3000";
+    const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:3000";
 
     const socket = io(serverUrl, {
       auth: { token: TokenStore.getAccessToken() },
@@ -55,6 +58,24 @@ export function SocketProvider({ children }) {
     socket.on("connect", () => {
       console.log("[Socket] Terhubung:", socket.id);
       setIsConnected(true);
+    });
+
+    // ── LISTENER PUSH NOTIFICATION (SUDAH SINKRON) ───────────
+    socket.on("push-notification", (data) => {
+      console.log("[Socket] Menerima Notifikasi Push Terjadwal:", data);
+      
+      // ✅ EKSEKUSI TOAST: Panggil langsung fungsi addToast bawaan proyekmu
+      if (typeof addToast === "function") {
+        addToast({
+          type: "info",
+          title: data.title,
+          text: data.message,    // Mengirim properti text sesuai standar template
+          message: data.message  // Cadangan jika komponenmu membaca properti 'message'
+        });
+      }
+      
+      // Memicu refresh otomatis daftar kartu pengingat di halaman web kamu
+      window.dispatchEvent(new CustomEvent("reminder:triggered"));
     });
 
     socket.on("disconnect", (reason) => {
@@ -72,10 +93,11 @@ export function SocketProvider({ children }) {
     });
 
     return () => {
+      socket.off("push-notification"); 
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [user]);
+  }, [user, addToast]);
 
   return (
     <SocketContext.Provider value={{ socket: socketRef.current, isConnected, onlineCount }}>
